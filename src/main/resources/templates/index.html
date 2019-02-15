@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/xhtml"
+>
+<head>
+    <script src="jquery-3.1.1.min.js"></script>
+    <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+    <script src="sockjs-0.3.4.min.js"></script>
+    <script src="stomp.min.js"></script>
+</head>
+
+<body>
+
+<nav class="navbar navbar-expand-sm bg-dark navbar-dark fixed-top">
+    <a class="navbar-brand" href="#">Coiner</a>
+    <ul class="navbar-nav">
+        <li class="nav-item">
+            <a class="nav-link" href="/logout">Logout</a>
+        </li>
+    </ul>
+</nav>
+
+<div class="container-fluid" style="margin-top:80px">
+    <h2 th:inline="text">Welcome [[${#httpServletRequest.remoteUser}]]</h2>
+    <h4>Subscribe for a notification</h4>
+    <form action="/" class="form-control">
+        <select name="currencyPair" id="currenyPairSelect" class="form-control">
+            <option value=""></option>
+        </select>
+        <input name="limit" id="limit" value="" class="form-control" placeholder="limit"/>
+        <!--<button id="subscription" class="form-control">Submit</button>-->
+        <input id="subscription" type="button" class="form-control" value="Submit"/>
+    </form>
+    <hr>
+    <h4>Your Subscriptions</h4>
+    <table class="table" id="currentSubscriptions">
+        <thead>
+        <tr>
+            <th scope="col">Id</th>
+            <th scope="col">Currency Pair</th>
+            <th scope="col">Limit</th>
+            <th scope="col">Operation</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr></tr>
+        </tbody>
+    </table>
+    <hr>
+    <h4>Subscription Alerts</h4>
+    <ul class="form-control" id="alerts"></ul>
+</div>
+
+<script>
+    (function () {
+
+        $(document).ready(function () {
+            $("#subscription").on("click", createSubscription);
+            $("#currentSubscriptions").find("tr input").on('click', removeSubscription);
+            loadSubscriptions();
+            fetchCurrencies();
+            connectWebSocket();
+        });
+
+        function createSubscription(event) {
+            event.preventDefault();
+            var currencyPair = $("#currenyPairSelect").children("option:selected").val();
+            var limit = $("#limit").val();
+
+            $.ajax({
+                url: "/alert?" + "pair=" + currencyPair + "&limit=" + limit,
+                type: "PUT"
+            }).done(function () {
+                alert("success");
+                $("#limit").val();
+                loadSubscriptions();
+            })
+                .fail(function () {
+                    alert("error");
+                });
+        }
+
+        function removeSubscription(event) {
+            var $el = $(event.target);
+            console.log($el);
+            var currencyPair = $el.attr('id');
+            $.ajax({
+                url: "/alert?" + "pair=" + currencyPair,
+                type: "DELETE"
+            })
+                .done(function () {
+                    alert("success");
+                    loadSubscriptions();
+                })
+                .fail(function () {
+                    alert("error");
+                });
+        }
+
+        function connectWebSocket() {
+            var socket = new SockJS('/ws');
+            var stompClient = Stomp.over(socket);
+
+            stompClient.connect({}, function (frame) {
+                stompClient.subscribe('/user/queue/notify', function (data) {
+                    var notification = JSON.parse(data.body);
+                    console.log(notification);
+                    notify(notification);
+                });
+            });
+        }
+
+        function notify(notification) {
+            var message = "Currency Pair: " + notification.currencyPair
+                + ", Limit: " + notification.threshold
+                + ", CurrentValue: " + notification.currentValue
+                + ", Timestamp: " + notification.timestamp;
+            var $item = $("<li></li>").text(message).addClass('list-group-item');
+            $('#alerts').append($item);
+        }
+
+        function loadSubscriptions() {
+            // remove all rows
+            $("#currentSubscriptions tbody tr").remove();
+            $.getJSON("/subscriptions", function (data) {
+                var $rows = [];
+                for (var i in data) {
+                    var subscription = data[i];
+                    var $row = $("<tr></tr>");
+                    $row.append($("<td>" + subscription.id + "</td>"));
+                    $row.append($("<td>" + subscription.currencyPair + "</td>"));
+                    $row.append($("<td>" + subscription.threshold + "</td>"));
+                    $row.append($("<td><input type='button' value='Unsubscribe' class='form-control' " +
+                        "id='" + subscription.currencyPair + "'/></td>"));
+                    $rows.push($row);
+                }
+                $('#currentSubscriptions tbody').append($rows);
+                $("#currentSubscriptions").find("tr input").on('click', removeSubscription);
+            });
+        }
+
+        function fetchCurrencies() {
+            $.get("/currency-pairs", function (data) {
+                var $options = [];
+                for (var i in data) {
+                    var $option = $("<option></option>").val(data[i]).text(data[i]);
+                    $options.push($option);
+                }
+                $options[0].attr('selected', true);
+                $("#currenyPairSelect").append($options);
+            });
+
+        }
+    }());
+
+</script>
+</body>
+
+</html>
