@@ -1,6 +1,11 @@
 # coiner
 a simple Cryptocurrency notification web application based on https://github.com/bitrich-info/xchange-stream
 
+## how-to
+- Build: `mvn install`
+- Run: `mvn spring-boot:run`
+
+## details
 Technology stack :  Java 8, Spring Boot 2, Spring Security, Websocket, H2, JQuery, Bootstrap (please see pom.xml for the rest)
 
 I used for https://github.com/bitrich-info/xchange-stream (based on XChange) because it supports streaming which give better performance and the application doesn't have to send a request at all. It works based on publisher & subscriber pattern.
