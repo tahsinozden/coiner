@@ -9,6 +9,6 @@ I created some users to be used for login. Those can be found under Spring Secur
 
 In the application, as seen below there are three parts.
 
-1- Subscribe for a notification : new subscriptions can be made with all supported currencies
-2- Your Subscriptions : your current subscriptions can be seen and can be unsubscribed.
-3- Subscription Alerts : alerts based on your subscriptions in real time using web sockets.
+- Subscribe for a notification : new subscriptions can be made with all supported currencies
+- Your Subscriptions : your current subscriptions can be seen and can be unsubscribed.
+- Subscription Alerts : alerts based on your subscriptions in real time using web sockets.
