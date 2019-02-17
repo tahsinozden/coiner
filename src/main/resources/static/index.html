@@ -21,7 +21,7 @@
 </nav>
 
 <div class="container-fluid" style="margin-top:80px">
-    <h2 th:inline="text">Welcome [[${#httpServletRequest.remoteUser}]]</h2>
+    <h2 id="current-user">Welcome</h2>
     <h4>Subscribe for a notification</h4>
     <form action="/" class="form-control">
         <select name="currencyPair" id="currenyPairSelect" class="form-control">
@@ -60,6 +60,7 @@
             loadSubscriptions();
             fetchCurrencies();
             connectWebSocket();
+            loadCurrentUserName();
         });
 
         function createSubscription(event) {
@@ -149,7 +150,12 @@
                 $options[0].attr('selected', true);
                 $("#currenyPairSelect").append($options);
             });
+        }
 
+        function loadCurrentUserName() {
+            $.get("/users/current-user", function (userName) {
+                $("#current-user").html("Welcome " + userName);
+            });
         }
     }());
 
